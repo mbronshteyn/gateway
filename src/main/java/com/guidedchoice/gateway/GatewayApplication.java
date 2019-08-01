@@ -8,6 +8,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.gateway.discovery.DiscoveryClientRouteDefinitionLocator;
+import org.springframework.cloud.gateway.discovery.DiscoveryLocatorProperties;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -29,9 +31,8 @@ public class GatewayApplication {
 
     @Bean
     public RouteLocator myRoutes(RouteLocatorBuilder builder, UriConfiguration uriConfiguration) throws Exception {
-        String httpUri = uriConfiguration.getHttpbin();
 
-		URI uri = discoveryClient.getInstances( "LAB-4-SENTENCE").get(0).getUri();
+        String httpUri = uriConfiguration.getHttpbin();
 
 		return builder.routes()
                 .route(p -> p
@@ -39,8 +40,9 @@ public class GatewayApplication {
                         .filters(f -> f.addRequestHeader("Hello", "World"))
                         .uri(httpUri))
 				.route(p -> p
-						.path("/sentence")
-						.uri( uri ))
+						.path("/sentence-client/**")
+                        .filters( f-> f.rewritePath( "/sentence-client/(?<segment>.*)", "/$\\{segment}"))
+						.uri( "lb://SENTENCE" ))
                 .route(p -> p
                         .host("*.hystrix.com")
                         .filters(f -> f
@@ -76,5 +78,19 @@ class UriConfiguration {
 
 	public void setHttpbin(String httpbin) {
 		this.httpbin = httpbin;
+	}
+}
+
+@Configuration
+@EnableDiscoveryClient
+class GatewayDiscoveryConfiguration {
+
+	@Autowired
+	DiscoveryLocatorProperties discoveryLocatorProperties;
+
+	@Bean
+	public DiscoveryClientRouteDefinitionLocator
+	discoveryClientRouteLocator(DiscoveryClient discoveryClient) {
+		return new DiscoveryClientRouteDefinitionLocator(discoveryClient, discoveryLocatorProperties );
 	}
 }
