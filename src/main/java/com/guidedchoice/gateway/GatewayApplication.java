@@ -5,7 +5,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.gateway.discovery.DiscoveryClientRouteDefinitionLocator;
@@ -17,8 +16,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
-
-import java.net.URI;
 
 @SpringBootApplication
 @RestController
@@ -41,17 +38,24 @@ public class GatewayApplication {
                         .uri(httpUri))
 				.route(p -> p
 						.path("/sentence-client/**")
-                        .filters( f-> f.rewritePath( "/sentence-client/(?<segment>.*)", "/$\\{segment}"))
+                        .filters( f-> f.hystrix(config -> config
+								.setName("mycmd")
+								.setFallbackUri("forward:/fallback"))
+								.rewritePath(
+                        		"/sentence-client/(?<segment>.*)", "/$\\{segment}")
+						)
 						.uri( "lb://SENTENCE" ))
                 .route(p -> p
                         .host("*.hystrix.com")
-                        .filters(f -> f
-                                .hystrix(config -> config
+                        .filters(f -> f.hystrix(config -> config
                                         .setName("mycmd")
                                         .setFallbackUri("forward:/fallback")))
                         .uri(httpUri))
                 .build();
     }
+
+    @Autowired
+    DiscoveryClientRouteDefinitionLocator discoveryClientRouteDefinitionLocator;
 
 	@RequestMapping("/fallback")
 	public Mono<String> fallback() {
@@ -65,6 +69,7 @@ public class GatewayApplication {
 
 
 }
+
 
 @Configuration
 @ConfigurationProperties( prefix = "uri" )
