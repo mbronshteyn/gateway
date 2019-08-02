@@ -41,8 +41,8 @@ public class GatewayApplication {
 						.path("/sentence-client/**")
                         .filters( f-> f
 								.hystrix(config -> config
-								.setName("mycmd")
-								.setFallbackUri("forward:/fallback"))
+									.setName("mycmd")
+									.setFallbackUri("forward:/fallback"))
 								.rewritePath(
                         		"/sentence-client/(?<segment>.*)", "/$\\{segment}")
                                 .retry( 3 )
