@@ -1,4 +1,10 @@
-eureka.client.serviceUrl.defaultZone: http://localhost:8010/eureka/
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8010/eureka/
+    registerWithEureka: true
+    fetchRegistry: true
+    registry-fetch-interval-seconds: 10
 
 spring:
   application:

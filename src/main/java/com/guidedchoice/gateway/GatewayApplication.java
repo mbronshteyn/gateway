@@ -11,6 +11,7 @@ import org.springframework.cloud.gateway.discovery.DiscoveryClientRouteDefinitio
 import org.springframework.cloud.gateway.discovery.DiscoveryLocatorProperties;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
+import org.springframework.cloud.netflix.ribbon.RibbonClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,11 +39,13 @@ public class GatewayApplication {
                         .uri(httpUri))
 				.route(p -> p
 						.path("/sentence-client/**")
-                        .filters( f-> f.hystrix(config -> config
+                        .filters( f-> f
+								.hystrix(config -> config
 								.setName("mycmd")
 								.setFallbackUri("forward:/fallback"))
 								.rewritePath(
                         		"/sentence-client/(?<segment>.*)", "/$\\{segment}")
+                                .retry( 3 )
 						)
 						.uri( "lb://SENTENCE" ))
                 .route(p -> p
@@ -99,3 +102,4 @@ class GatewayDiscoveryConfiguration {
 		return new DiscoveryClientRouteDefinitionLocator(discoveryClient, discoveryLocatorProperties );
 	}
 }
+
