@@ -30,7 +30,7 @@ public class GatewayApplication {
     @Bean
     public RouteLocator myRoutes(RouteLocatorBuilder builder, UriConfiguration uriConfiguration) throws Exception {
 
-        String httpUri = uriConfiguration.getHttpbin();
+    String httpUri = uriConfiguration.getHttpbin();
 
 		return builder.routes()
                 .route(p -> p
@@ -39,31 +39,21 @@ public class GatewayApplication {
                         .uri(httpUri))
 				.route(p -> p
 						.path("/sentence-client/**")
-                        .filters( f-> f
-								.hystrix(config -> config
-									.setName("mycmd")
-									.setFallbackUri("forward:/fallback"))
-								.rewritePath(
+            .filters( f -> f.rewritePath(
                         		"/sentence-client/(?<segment>.*)", "/$\\{segment}")
-                                .retry( 3 )
+                             .retry( 4 )
 						)
 						.uri( "lb://SENTENCE" ))
-                .route(p -> p
-                        .host("*.hystrix.com")
-                        .filters(f -> f.hystrix(config -> config
-                                        .setName("mycmd")
-                                        .setFallbackUri("forward:/fallback")))
-                        .uri(httpUri))
-                .build();
+            .build();
     }
 
     @Autowired
     DiscoveryClientRouteDefinitionLocator discoveryClientRouteDefinitionLocator;
 
-	@RequestMapping("/fallback")
-	public Mono<String> fallback() {
-		return Mono.just("fallback\n");
-	}
+//	@RequestMapping("/fallback")
+//	public Mono<String> fallback() {
+//		return Mono.just("fallback\n");
+//	}
 
 
 	public static void main(String[] args) {
