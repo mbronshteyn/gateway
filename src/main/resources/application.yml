@@ -9,3 +9,11 @@ eureka:
 spring:
   application:
     name: GATEWAY
+
+
+pring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
